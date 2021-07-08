@@ -61,7 +61,7 @@ extern int_t lapjv_internal(
     int_t *x, int_t *y);
 
 extern int_t lapmod_internal(
-    const uint_t n, cost_t *cc, uint_t *ii, uint_t *kk,
-    int_t *x, int_t *y, fp_t fp_version);
+    const int_t n, cost_t *cc, int_t *ii, int_t *kk,
+    int_t *x, int_t *y, fp_t fp_version, cost_t large);
 
 #endif // LAPJV_H

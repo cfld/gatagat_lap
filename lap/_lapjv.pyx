@@ -9,6 +9,7 @@ from libc.stdlib cimport malloc, free
 cdef extern from "lapjv.h" nogil:
     ctypedef signed int int_t
     ctypedef unsigned int uint_t
+    ctypedef double cost_t
     cdef int LARGE
     cdef enum fp_t:
         FP_1
@@ -20,13 +21,14 @@ cdef extern from "lapjv.h" nogil:
             int_t *x,
             int_t *y)
     int lapmod_internal(
-            const uint_t n,
-            double *cc,
-            uint_t *ii,
-            uint_t *kk,
+            const int_t n,
+            cost_t *cc,
+            int_t *ii,
+            int_t *kk,
             int_t *x,
             int_t *y,
-            fp_t fp_version)
+            fp_t fp_version,
+            cost_t large)
 
 LARGE_ = LARGE
 FP_1_ = FP_1
@@ -132,26 +134,23 @@ def lapjv(cnp.ndarray cost not None, char extend_cost=False,
 @cython.boundscheck(False)
 @cython.wraparound(False)
 def _lapmod(
-        const uint_t n,
+        const int_t n,
         cnp.ndarray cc not None,
         cnp.ndarray ii not None,
         cnp.ndarray kk not None,
-        fp_t fp_version=FP_DYNAMIC):
+        fp_t fp_version=FP_DYNAMIC,
+        cost_t large=10000):
+    
     """Internal function called from lapmod(..., fast=True)."""
-    cdef cnp.ndarray[cnp.double_t, ndim=1, mode='c'] cc_c = \
-        np.ascontiguousarray(cc, dtype=np.double)
-    cdef cnp.ndarray[uint_t, ndim=1, mode='c'] ii_c = \
-        np.ascontiguousarray(ii, dtype=np.uint32)
-    cdef cnp.ndarray[uint_t, ndim=1, mode='c'] kk_c = \
-        np.ascontiguousarray(kk, dtype=np.uint32)
-    cdef cnp.ndarray[int_t, ndim=1, mode='c'] x_c = \
-        np.empty((n,), dtype=np.int32)
-    cdef cnp.ndarray[int_t, ndim=1, mode='c'] y_c = \
-        np.empty((n,), dtype=np.int32)
+    
+    cdef cnp.ndarray[cost_t, ndim=1, mode='c'] cc_c = np.ascontiguousarray(cc, dtype=np.double)
+    cdef cnp.ndarray[int_t, ndim=1, mode='c'] ii_c        = np.ascontiguousarray(ii, dtype=np.int32)
+    cdef cnp.ndarray[int_t, ndim=1, mode='c'] kk_c        = np.ascontiguousarray(kk, dtype=np.int32)
+    cdef cnp.ndarray[int_t, ndim=1, mode='c'] x_c         = np.empty((n,), dtype=np.int32)
+    cdef cnp.ndarray[int_t, ndim=1, mode='c'] y_c         = np.empty((n,), dtype=np.int32)
 
-    cdef int_t ret = lapmod_internal(
-                n, &cc_c[0], &ii_c[0], &kk_c[0],
-                &x_c[0], &y_c[0], fp_version)
+    cdef int_t ret = lapmod_internal(n, &cc_c[0], &ii_c[0], &kk_c[0], &x_c[0], &y_c[0], fp_version, large)
+    
     if ret != 0:
         if ret == -1:
             raise MemoryError('Out of memory.')
