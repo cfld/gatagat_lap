@@ -1,4 +1,4 @@
-CXXFLAGS += -std=c++11 -Wall -Wunused-result -O3 -DNDEBUG -g -fopenmp -ffast-math
+CXXFLAGS = -std=c++11 -Wall -Wunused-result -O3 -DNDEBUG -g -ffast-math
 # CXXFLAGS += -std=c++11 -mtune=native -march=native -Wall -Wunused-result -O3 -DNDEBUG -g -fopenmp -ffast-math
 
 APP=test

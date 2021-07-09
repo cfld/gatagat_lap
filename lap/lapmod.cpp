@@ -140,21 +140,38 @@ int_t _carr_sparse(
         //     const cost_t c = cc[k] - v[j];
 
         int_t k = ii[free_i];
-        if( kk[k] == 0 ){
-            k++;
-        }
-        cost_t cj = 0;
+        if(kk[k] == 0) k++;
+        
+        // << HOTSPOT
+        // cost_t cj = 0;
+        // for (int_t j = 1; j < n; j++) {
+            
+        //     if(k < ii[free_i + 1] && kk[k] == j) {
+        //         cj = cc[k];
+        //         k++;
+        //     } else {
+        //         cj = large;
+        //     }
+            
+        //     const cost_t c = cj - v[j];
+            
+        //     if (c < v2) {
+        //         if (c >= v1) {
+        //             v2 = c;
+        //             j2 = j;
+        //         } else {
+        //             v2 = v1;
+        //             v1 = c;
+        //             j2 = j1;
+        //             j1 = j;
+        //         }
+        //     }
+        // }
+        // --
+        // BKJ -- 6x speedup
+        
         for (int_t j = 1; j < n; j++) {
-            if(k < ii[free_i+1] && kk[k] == j) {
-                PRINTF("GOOD ONE %d ", j);
-                cj = cc[k];
-                k++;
-            } else {
-                PRINTF("NOT GOOD   ");
-                cj = large;
-            }
-            const cost_t c = cj - v[j];
-            PRINTF("%d = %f %d = %f\n", j1, v1, j2, v2);
+            const cost_t c = large - v[j];
             if (c < v2) {
                 if (c >= v1) {
                     v2 = c;
@@ -167,6 +184,25 @@ int_t _carr_sparse(
                 }
             }
         }
+        
+        for (int_t k = ii[free_i]; k < ii[free_i + 1]; k++) {
+            int_t j        = kk[k];            
+            const cost_t c = cc[k] - v[j];
+            
+            if (c < v2) {
+                if (c >= v1) {
+                    v2 = c;
+                    j2 = j;
+                } else {
+                    v2 = v1;
+                    v1 = c;
+                    j2 = j1;
+                    j1 = j;
+                }
+            }
+        }
+        // >>
+        
         PRINTF("%d = %f %d = %f\n", j1, v1, j2, v2);
         i0 = y[j1];
         v1_new = v[j1] - (v2 - v1);

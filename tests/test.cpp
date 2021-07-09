@@ -88,15 +88,15 @@ int main(int n_args, char** argument_array) {
     long long ms = duration_cast<microseconds>(elapsed).count();
     printf("lapmod_internal: stop\n");
     
-    // cost_t cost = 0;
-    // for(int i = 0; i < n_rows; i++) {
-    //   for(int offset = indptr[i]; offset < indptr[i + 1]; offset++) {
-    //     int_t j = indices[offset];
-    //     if(j == x[i]) {
-    //       cost += data[offset];
-    //     }
-    //   }
-    // }
+    cost_t cost = 0;
+    for(int i = 0; i < n_rows; i++) {
+      for(int offset = indptr[i]; offset < indptr[i + 1]; offset++) {
+        int_t j = indices[offset];
+        if(j == x[i]) {
+          cost += data[offset];
+        }
+      }
+    }
     
-    // printf("cost = %f | ms = %ld \n", cost, ms);
+    printf("cost = %f | ms = %ld \n", cost, ms);
 }
