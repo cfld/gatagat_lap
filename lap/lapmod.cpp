@@ -4,7 +4,7 @@
 
 #include "lapjv.h"
 
-// #define ORIGINAL
+#define ORIGINAL
 
 /** Column-reduction and reduction transfer for a sparse cost matrix.
  */
