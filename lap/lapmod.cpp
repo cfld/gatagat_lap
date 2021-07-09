@@ -264,21 +264,23 @@ int_t _scan_sparse_1(
     int_t lo = *plo;
     int_t hi = *phi;
     cost_t h, cred_ij;
-
+    
     while (lo != hi) {
         int_t kj;
         int_t j           = cols[lo++];
         const int_t i     = y[j];
         const cost_t mind = d[j];
         
-        for (int_t k = 0; k < n; k++) rev_kk[k] = -1;
+        // BKJ optimization
+        memset(rev_kk, 0, n);
+        // for (int_t k = 0; k < n; k++) rev_kk[k] = 0;
         
         for (int_t k = ii[i]; k < ii[i+1]; k++) {
             const int_t j = kk[k];
-            rev_kk[j] = k;
+            rev_kk[j] = k + 1;
         }
 
-        kj = rev_kk[j];
+        kj = rev_kk[j] - 1;
         if (kj == -1) {
             h = large - v[j] - mind;
         } else {
@@ -289,7 +291,8 @@ int_t _scan_sparse_1(
         for (int_t k = hi; k < n; k++) {
             j = cols[k];
 
-            if ((kj = rev_kk[j]) == -1) {
+            kj = rev_kk[j] - 1;
+            if (kj == -1) {
                 cred_ij = large - v[j] - h;
             } else {
                 cred_ij = cc[kj] - v[j] - h;
