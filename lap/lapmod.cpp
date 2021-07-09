@@ -231,7 +231,7 @@ int_t _carr_sparse(
 
 /** Find columns with minimum d[j] and put them on the SCAN list.
  */
-int_t _find_sparse_1(const int_t n, int_t lo, cost_t *d, int_t *cols, int_t *y)
+int_t my_find_sparse_1(const int_t n, int_t lo, cost_t *d, int_t *cols, int_t *y)
 {
     
     int_t hi    = lo + 1;
@@ -254,7 +254,7 @@ int_t _find_sparse_1(const int_t n, int_t lo, cost_t *d, int_t *cols, int_t *y)
 /** Scan all columns in TODO starting from arbitrary column in SCAN and try to
  * decrease d of the TODO columns using the SCAN column.
  */
-int_t _scan_sparse_1(
+int_t my_scan_sparse_1(
     const int_t n, cost_t *cc, int_t *ii, int_t *kk,
     int_t *plo, int_t *phi,
     cost_t *d, int_t *cols, int_t *pred,
@@ -388,7 +388,7 @@ __inline__ int_t find_path_sparse_1(
         if (lo == hi) {
 
             n_ready = lo;
-            hi      = _find_sparse_1(n, lo, d, cols, y);
+            hi      = my_find_sparse_1(n, lo, d, cols, y);
             
             for (int_t k = lo; k < hi; k++) {
                 const int_t j = cols[k];
@@ -399,7 +399,7 @@ __inline__ int_t find_path_sparse_1(
         }
         
         if (final_j == -1) {
-            final_j = _scan_sparse_1(n, cc, ii, kk, &lo, &hi, d, cols, pred, y, v, large, rev_kk);
+            final_j = my_scan_sparse_1(n, cc, ii, kk, &lo, &hi, d, cols, pred, y, v, large, rev_kk);
         }
     }
     
