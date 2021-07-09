@@ -53,26 +53,37 @@ int_t _ccrrt_sparse(const int_t n, cost_t *cc, int_t *ii, int_t *kk,
         } else if (unique[i]) {
             const int_t j = x[i];
             cost_t min = LARGE;
-            int_t k = ii[i];
+            
+            // <<
+            // for (uint_t k = ii[i]; k < ii[i+1]; k++) {
+            //     const int_t j2 = kk[k];
+            //     if (j2 == j) continue;
+                
+            //     const cost_t c = cc[k] - v[j2];
+            //     if(c < min)
+            //         min = c;
+            // }
+            // --
+            int_t k    = ii[i];
             cost_t cj2 = 0;
+            
             for (int_t j2 = 0; j2 < n; j2++) {
+                
                 if(k < ii[i + 1] && kk[k] == j2) {
                     cj2 = cc[k];
                     k++;
                 } else {
                     cj2 = large;
                 }
-                // const int_t j2 = kk[k];
-                if (j2 == (int_t)j) {
-                    continue;
-                }
+                
+                if (j2 == (int_t)j) continue;
+                
                 const cost_t c = cj2 - v[j2];
-                if (c < min) {
+                if (c < min)
                     min = c;
-                }
-                PRINTF("j2 = %i, i = %i, cc[i,j2] = %f, c = %f, v[j2] = %f, min = %f\n", j2, i, cc[k], c, v[j2], min);
             }
-            PRINTF("v[%d] = %f - %f\n", j, v[j], min);
+            // >>
+            
             v[j] -= min;
         }
     }
@@ -381,9 +392,13 @@ int_t _scan_sparse_2(
  * \return The closest free column index.
  */
 int_t find_path_sparse_1(
-    const int_t n, cost_t *cc, int_t *ii, int_t *kk,
+    const int_t n,
+    cost_t *cc,
+    int_t *ii,
+    int_t *kk,
     const int_t start_i,
-    int_t *y, cost_t *v,
+    int_t *y,
+    cost_t *v,
     int_t *pred,
     cost_t large)
 {
@@ -397,35 +412,38 @@ int_t find_path_sparse_1(
     NEW(d, cost_t, n);
 
     for (int_t i = 0; i < n; i++) {
-        cols[i] = i;
-        d[i] = large;
-        pred[i] = start_i;
+        cols[i] = i;       // range(n)
+        d[i]    = large;   // [large] * n
+        pred[i] = start_i; // [start_i] * n
     }
 
+    // <<
     // for (int_t i = ii[start_i]; i < ii[start_i + 1]; i++) {
     //     const int_t j = kk[i];
     //     d[j] = cc[i] - v[j];
     // }
+    // --
     cost_t cci = 0;
-    int_t k = ii[start_i];
+    int_t k    = ii[start_i];
     for(int_t j = 0; j < n; j++) {
-        if(k < ii[start_i+1] && j == kk[k] ) {
+        
+        if(k < ii[start_i + 1] && j == kk[k]) {
             cci = cc[k];
             k++;
         } else {
             cci = large;
         }
+        
         d[j] = cci - v[j];
     }
-    PRINT_COST_ARRAY(d, n);
+    // >>
+    
     while (final_j == -1) {
-        // No columns left on the SCAN list.
         if (lo == hi) {
-            PRINTF("%d..%d -> find\n", lo, hi);
+            
             n_ready = lo;
-            hi = _find_sparse_1(n, lo, d, cols, y);
-            PRINTF("check %d..%d\n", lo, hi);
-            PRINT_INDEX_ARRAY(cols, n);
+            hi      = _find_sparse_1(n, lo, d, cols, y);
+            
             for (int_t k = lo; k < hi; k++) {
                 const int_t j = cols[k];
                 if (y[j] < 0) {
@@ -433,18 +451,12 @@ int_t find_path_sparse_1(
                 }
             }
         }
+        
         if (final_j == -1) {
-            PRINTF("%d..%d -> scan\n", lo, hi);
-            final_j = _scan_sparse_1(
-                    n, cc, ii, kk, &lo, &hi, d, cols, pred, y, v, large);
-            PRINT_COST_ARRAY(d, n);
-            PRINT_INDEX_ARRAY(cols, n);
-            PRINT_INDEX_ARRAY(pred, n);
+            final_j = _scan_sparse_1(n, cc, ii, kk, &lo, &hi, d, cols, pred, y, v, large);
         }
     }
-
-    PRINTF("found final_j=%d\n", final_j);
-    PRINT_INDEX_ARRAY(cols, n);
+    
     {
         const cost_t mind = d[cols[lo]];
         for (int_t k = 0; k < n_ready; k++) {
@@ -585,6 +597,7 @@ int_t find_path_sparse_dynamic(
     cost_t large)
 {
     const int_t n_i = ii[start_i+1] - ii[start_i];
+    
     // XXX: wouldnt it be better to decide for the whole matrix?
     if (n_i > 0.25 * n) {
         return find_path_sparse_1(n, cc, ii, kk, start_i, y, v, pred, large);
@@ -660,26 +673,34 @@ int_t _ca_sparse(
 /** Solve square sparse LAP.
  */
 int_t lapmod_internal(
-    const int_t n, cost_t *cc, int_t *ii, int_t *kk,
-    int_t *x, int_t *y, fp_t fp_version, cost_t large)
-{
-    printf("lapmod_internal\n");
-    
+    const int_t n,
+    cost_t *cc,
+    int_t *ii,
+    int_t *kk,
+    int_t *x,
+    int_t *y,
+    fp_t fp_version,
+    cost_t large
+) {
     int_t ret;
     int_t *free_rows;
     cost_t *v;
 
     NEW(free_rows, int_t, n);
     NEW(v, cost_t, n);
+    
     ret = _ccrrt_sparse(n, cc, ii, kk, free_rows, x, y, v, large);
     int i = 0;
+    
     while (ret > 0 && i < 2) {
         ret = _carr_sparse(n, cc, ii, kk, ret, free_rows, x, y, v, large);
         i++;
     }
+    
     if (ret > 0) {
         ret = _ca_sparse(n, cc, ii, kk, ret, free_rows, x, y, v, fp_version, large);
     }
+    
     FREE(v);
     FREE(free_rows);
     return ret;
