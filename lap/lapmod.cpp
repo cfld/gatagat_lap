@@ -4,7 +4,7 @@
 
 #include "lapjv.h"
 
-// #define ORIGINAL
+#define ORIGINAL
 
 /** Column-reduction and reduction transfer for a sparse cost matrix.
  */
@@ -214,11 +214,10 @@ int_t _carr_sparse(
         }
 #endif
         
-        PRINTF("%d = %f %d = %f\n", j1, v1, j2, v2);
         i0 = y[j1];
         v1_new = v[j1] - (v2 - v1);
         v1_lowers = v1_new < v[j1];
-        PRINTF("%d %d 1=%d,%f 2=%d,%f %f %d\n", free_i, i0, j1, v1, j2, v2, v1_new, v1_lowers);
+
         if (v1_lowers) {
             v[j1] = v1_new;
         } else if (i0 >= 0 && j2 >= 0) {
@@ -286,30 +285,6 @@ int_t _find_sparse_1(const int_t n, int_t lo, cost_t *d, int_t *cols, int_t *y)
     // sets cols[lo:hi] to be columns w/ minimum value
     return hi;
 }
-
-
-/** Find columns with minimum d[j] and put them on the SCAN list.
- */
-int_t _find_sparse_2(cost_t *d, int_t *scan, const int_t n_todo, int_t *todo, boolean *done, cost_t large)
-{
-    int_t hi = 0;
-    cost_t mind = large;
-    for (int_t k = 0; k < n_todo; k++) {
-        int_t j = todo[k];
-        if (done[j]) {
-            continue;
-        }
-        if (d[j] <= mind) {
-            if (d[j] < mind) {
-                hi = 0;
-                mind = d[j];
-            }
-            scan[hi++] = j;
-        }
-    }
-    return hi;
-}
-
 
 /** Scan all columns in TODO starting from arbitrary column in SCAN and try to
  * decrease d of the TODO columns using the SCAN column.
