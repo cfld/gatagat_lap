@@ -4,7 +4,7 @@
 
 #include "lapjv.h"
 
-#define ORIGINAL
+// #define ORIGINAL
 
 /** Column-reduction and reduction transfer for a sparse cost matrix.
  */
@@ -172,8 +172,6 @@ int_t _carr_sparse(
             }
         }
 #else
-        // unclear whether this helps on the problem of interest ...
-        
         for (int_t k = ii[free_i]; k < ii[free_i + 1]; k++) {
             int_t j        = kk[k];            
             const cost_t c = cc[k] - v[j]; // find smallest values of cc[k] - v[j]
@@ -190,25 +188,18 @@ int_t _carr_sparse(
                 }
             }
         }
-        
-        cost_t v_max = 0;
+                
         for (int_t j = 1; j < n; j++) {
-            if(v_max < v[j]) v_max = v[j];
-        }
-        
-        if(large - v_max < v2) {
-            for (int_t j = 1; j < n; j++) {
-                const cost_t c = large - v[j]; // find largest values of v[j]
-                if (c < v2) {
-                    if (c >= v1) {
-                        v2 = c;
-                        j2 = j;
-                    } else {
-                        v2 = v1;
-                        v1 = c;
-                        j2 = j1;
-                        j1 = j;
-                    }
+            const cost_t c = large - v[j]; // find largest values of v[j]
+            if (c < v2) {
+                if (c >= v1) {
+                    v2 = c;
+                    j2 = j;
+                } else {
+                    v2 = v1;
+                    v1 = c;
+                    j2 = j1;
+                    j1 = j;
                 }
             }
         }
@@ -242,9 +233,6 @@ int_t _carr_sparse(
  */
 int_t _find_sparse_1(const int_t n, int_t lo, cost_t *d, int_t *cols, int_t *y)
 {
-    // From hi to n
-    // Get cols[k]
-    // If d is smallest, set hi to lo, update smallest, swap k with lo
     
     int_t hi    = lo + 1;
     cost_t mind = d[cols[lo]];
@@ -260,29 +248,6 @@ int_t _find_sparse_1(const int_t n, int_t lo, cost_t *d, int_t *cols, int_t *y)
             cols[hi++] = j;
         }
     }
-    return hi;
-    
-    // int_t hi    = lo + 1;
-    // cost_t mind = d[cols[lo]];
-    
-    // // find minimum
-    // for (int_t k = lo; k < n; k++) {
-    //     int_t j = cols[k];
-    //     if (d[j] < mind)
-    //         mind = d[j];
-    // }
-    
-    // int_t hi = lo;
-    // for (int_t k = lo; k < n; k++) {
-    //     int_t j = cols[k];
-    //     if(d[j] == mind) {
-    //         cols[k]  = cols[hi]; // swap cols[k] and cols[hi]
-    //         cols[hi] = j;
-    //         hi       = hi + 1;   // increment hi
-    //     }
-    // }
-    
-    // sets cols[lo:hi] to be columns w/ minimum value
     return hi;
 }
 
@@ -331,12 +296,14 @@ int_t _scan_sparse_1(
             }
             
             if (cred_ij < d[j]) {
-                d[j] = cred_ij;
+                d[j]    = cred_ij;
                 pred[j] = i;
+                
                 if (cred_ij == mind) {
                     if (y[j] < 0) {
                         return j;
                     }
+                    
                     cols[k] = cols[hi];
                     cols[hi++] = j;
                 }
@@ -372,6 +339,7 @@ __inline__ int_t find_path_sparse_1(
     int_t final_j = -1;
     int_t n_ready = 0;
 
+#ifdef ORIGINAL
     for (int_t i = 0; i < n; i++) {
         cols[i] = i;       // range(n)
         d[i]    = large;   // [large] * n
@@ -398,12 +366,24 @@ __inline__ int_t find_path_sparse_1(
         d[j] = cci - v[j];
     }
     // >>
+#else
+    for (int_t i = 0; i < n; i++) {
+        cols[i] = i;
+        d[i]    = large - v[i];
+        pred[i] = start_i;
+    }
+    for (int_t k = ii[start_i]; k < ii[start_i + 1]; k++) {
+        int_t j = kk[k];
+        d[j]    = cc[k] - v[j];
+    }
+#endif
 
     int_t *rev_kk;
     NEW(rev_kk, int_t, n);
     
     while (final_j == -1) {
         if (lo == hi) {
+
             n_ready = lo;
             hi      = _find_sparse_1(n, lo, d, cols, y);
             
@@ -448,7 +428,6 @@ int_t _ca_sparse(
     NEW(cols, int_t, n);
     NEW(d,    cost_t, n);
     
-    int counter = 0;
     for (int_t *pfree_i = free_rows; pfree_i < free_rows + n_free_rows; pfree_i++) {
         int_t i = -1;
         int_t k = 0;
