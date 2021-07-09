@@ -4,6 +4,8 @@
 
 #include "lapjv.h"
 
+// #define ORIGINAL
+
 /** Column-reduction and reduction transfer for a sparse cost matrix.
  */
 int_t _ccrrt_sparse(const int_t n, cost_t *cc, int_t *ii, int_t *kk,
@@ -143,35 +145,20 @@ int_t _carr_sparse(
         if(kk[k] == 0) k++;
         
         // << HOTSPOT
-        // cost_t cj = 0;
-        // for (int_t j = 1; j < n; j++) {
-            
-        //     if(k < ii[free_i + 1] && kk[k] == j) {
-        //         cj = cc[k];
-        //         k++;
-        //     } else {
-        //         cj = large;
-        //     }
-            
-        //     const cost_t c = cj - v[j];
-            
-        //     if (c < v2) {
-        //         if (c >= v1) {
-        //             v2 = c;
-        //             j2 = j;
-        //         } else {
-        //             v2 = v1;
-        //             v1 = c;
-        //             j2 = j1;
-        //             j1 = j;
-        //         }
-        //     }
-        // }
-        // --
-        // BKJ -- 6x speedup
-        
+
+#ifdef ORIGINAL
+        cost_t cj = 0;
         for (int_t j = 1; j < n; j++) {
-            const cost_t c = large - v[j];
+            
+            if(k < ii[free_i + 1] && kk[k] == j) {
+                cj = cc[k];
+                k++;
+            } else {
+                cj = large;
+            }
+            
+            const cost_t c = cj - v[j];
+            
             if (c < v2) {
                 if (c >= v1) {
                     v2 = c;
@@ -184,10 +171,12 @@ int_t _carr_sparse(
                 }
             }
         }
+#else
+        // unclear whether this helps on the problem of interest ...
         
         for (int_t k = ii[free_i]; k < ii[free_i + 1]; k++) {
             int_t j        = kk[k];            
-            const cost_t c = cc[k] - v[j];
+            const cost_t c = cc[k] - v[j]; // find smallest values of cc[k] - v[j]
             
             if (c < v2) {
                 if (c >= v1) {
@@ -201,7 +190,29 @@ int_t _carr_sparse(
                 }
             }
         }
-        // >>
+        
+        cost_t v_max = 0;
+        for (int_t j = 1; j < n; j++) {
+            if(v_max < v[j]) v_max = v[j];
+        }
+        
+        if(large - v_max < v2) {
+            for (int_t j = 1; j < n; j++) {
+                const cost_t c = large - v[j]; // find largest values of v[j]
+                if (c < v2) {
+                    if (c >= v1) {
+                        v2 = c;
+                        j2 = j;
+                    } else {
+                        v2 = v1;
+                        v1 = c;
+                        j2 = j1;
+                        j1 = j;
+                    }
+                }
+            }
+        }
+#endif
         
         PRINTF("%d = %f %d = %f\n", j1, v1, j2, v2);
         i0 = y[j1];
@@ -718,6 +729,13 @@ int_t lapmod_internal(
     fp_t fp_version,
     cost_t large
 ) {
+
+#ifdef ORIGINAL
+    printf("original\n");
+#else
+    printf("optimized\n");
+#endif
+
     int_t ret;
     int_t *free_rows;
     cost_t *v;

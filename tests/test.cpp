@@ -57,8 +57,6 @@ void load_data(std::string inpath) {
 }
 
 int main(int n_args, char** argument_array) {
-    
-    printf("loading\n");
     load_data(argument_array[1]);
     
     int_t* x = (int_t*)malloc(n_rows * sizeof(int_t));
@@ -81,12 +79,10 @@ int main(int n_args, char** argument_array) {
       idata[offset] = max_cost - data[offset];
     }
     
-    printf("lapmod_internal: start\n");
     auto t1 = high_resolution_clock::now();
     lapmod_internal(n_rows, idata, indptr, indices, x, y, fp_version, large);
     auto elapsed = high_resolution_clock::now() - t1;
     long long ms = duration_cast<microseconds>(elapsed).count();
-    printf("lapmod_internal: stop\n");
     
     cost_t cost = 0;
     for(int i = 0; i < n_rows; i++) {
@@ -98,5 +94,5 @@ int main(int n_args, char** argument_array) {
       }
     }
     
-    printf("cost = %f | ms = %ld \n", cost, ms);
+    printf("cost = %f | ms = %lld \n", cost, ms);
 }
