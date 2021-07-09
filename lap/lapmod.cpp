@@ -404,7 +404,6 @@ __inline__ int_t find_path_sparse_1(
     
     while (final_j == -1) {
         if (lo == hi) {
-            
             n_ready = lo;
             hi      = _find_sparse_1(n, lo, d, cols, y);
             
